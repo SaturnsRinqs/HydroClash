@@ -8,6 +8,44 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { motion } from "framer-motion";
+
+function TimeRemaining({ startDate, durationHours }: { startDate: string; durationHours: number }) {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const start = new Date(startDate).getTime();
+      const end = start + (durationHours * 60 * 60 * 1000);
+      const now = Date.now();
+      const diff = end - now;
+
+      if (diff <= 0) {
+        setTimeLeft("Ended");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        setTimeLeft(`${days}d ${hours % 24}h`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+      } else {
+        setTimeLeft(`${minutes}m ${seconds}s`);
+      }
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [startDate, durationHours]);
+
+  return <span>{timeLeft}</span>;
+}
 
 interface LeaderboardUser {
   id: string;
@@ -138,6 +176,22 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Challenge Title - Animated */}
+      <div className="mb-8 text-center">
+        <motion.h2 
+          className="text-4xl md:text-5xl font-display font-bold mb-2 bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          style={{
+            backgroundSize: '200% auto',
+            animation: 'gradient 3s linear infinite',
+          }}
+        >
+          {currentChallenge.title}
+        </motion.h2>
+      </div>
+
       {/* Stats Card */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <Card className="bg-card/40 border-white/5 backdrop-blur-sm p-4 flex items-center gap-3">
@@ -156,8 +210,16 @@ export default function Home() {
             <Timer className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground uppercase font-bold">Goal</p>
-            <p className="text-lg font-display font-bold">{currentChallenge.targetMl}ml</p>
+            <p className="text-xs text-muted-foreground uppercase font-bold">
+              {currentChallenge.durationHours ? "Time Left" : "Goal"}
+            </p>
+            <p className="text-lg font-display font-bold">
+              {currentChallenge.durationHours ? (
+                <TimeRemaining startDate={currentChallenge.startDate} durationHours={currentChallenge.durationHours} />
+              ) : (
+                `${currentChallenge.targetMl}ml`
+              )}
+            </p>
           </div>
         </Card>
       </div>
@@ -193,8 +255,19 @@ export default function Home() {
         </div>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Target</span>
-            <span className="font-mono">{currentChallenge.targetMl}ml / {currentChallenge.type}</span>
+            <span className="text-muted-foreground">Target Goal</span>
+            <span className="font-mono">{currentChallenge.targetMl}ml</span>
+          </div>
+          {currentChallenge.durationHours && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Duration</span>
+              <span className="font-mono">{currentChallenge.durationHours}h</span>
+            </div>
+          )}
+          <div className="text-xs text-muted-foreground italic border-l-2 border-primary/50 pl-3 py-1">
+            {currentChallenge.durationHours 
+              ? "First to reach the goal OR whoever has the most when time runs out wins!"
+              : "First to reach the goal wins!"}
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Participants</span>

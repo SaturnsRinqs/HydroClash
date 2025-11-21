@@ -48,6 +48,7 @@ export const challenges = pgTable("challenges", {
   title: varchar("title").notNull(),
   creatorId: varchar("creator_id").notNull().references(() => users.id),
   targetMl: integer("target_ml").notNull(),
+  durationHours: integer("duration_hours"), // null = no time limit
   type: varchar("type").notNull(), // 'daily' or 'total'
   status: varchar("status").notNull().default("active"), // 'active' or 'completed'
   startDate: timestamp("start_date").defaultNow(),

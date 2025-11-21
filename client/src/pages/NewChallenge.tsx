@@ -18,6 +18,7 @@ export default function NewChallenge() {
     title: "",
     type: "daily",
     targetMl: 3000,
+    durationHours: null as number | null,
   });
 
   const createChallengeMutation = useMutation({
@@ -137,6 +138,32 @@ export default function NewChallenge() {
               className="bg-black/20 border-white/10 h-12" 
               data-testid="input-target"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="duration" className="text-white">Time Limit (Optional)</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="hours" className="text-xs text-muted-foreground">Hours</Label>
+                <Input 
+                  id="hours" 
+                  type="number" 
+                  placeholder="e.g., 24"
+                  min="0"
+                  onChange={(e) => {
+                    const hours = e.target.value ? parseInt(e.target.value) : null;
+                    setFormData({...formData, durationHours: hours});
+                  }}
+                  className="bg-black/20 border-white/10 h-12" 
+                  data-testid="input-duration"
+                />
+              </div>
+              <div className="flex items-end">
+                <p className="text-xs text-muted-foreground p-3">
+                  Leave blank for no time limit. Challenge ends when someone reaches the goal OR time runs out.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
