@@ -129,12 +129,14 @@ export class DatabaseStorage implements IStorage {
     }
 
     let shouldComplete = false;
+    let completionReason: string | undefined;
 
     // Check if time limit exceeded
-    if (challenge.durationHours && challenge.startDate) {
-      const endTime = new Date(challenge.startDate).getTime() + (challenge.durationHours * 60 * 60 * 1000);
+    if (challenge.durationMinutes && challenge.startDate) {
+      const endTime = new Date(challenge.startDate).getTime() + (challenge.durationMinutes * 60 * 1000);
       if (Date.now() >= endTime) {
         shouldComplete = true;
+        completionReason = 'time_limit';
       }
     }
 
@@ -142,11 +144,12 @@ export class DatabaseStorage implements IStorage {
     const leaderboard = await this.getChallengeLeaderboard(challengeId);
     if (leaderboard.length > 0 && leaderboard[0].totalMl >= challenge.targetMl) {
       shouldComplete = true;
+      completionReason = 'ml_goal';
     }
 
     if (shouldComplete) {
-      await this.updateChallengeStatus(challengeId, 'completed');
-      return { ...challenge, status: 'completed', endDate: new Date() };
+      await this.updateChallengeStatus(challengeId, 'completed', completionReason);
+      return { ...challenge, status: 'completed', completionReason, endDate: new Date() };
     }
 
     return challenge;

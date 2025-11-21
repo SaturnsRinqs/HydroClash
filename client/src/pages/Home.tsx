@@ -236,11 +236,11 @@ export default function Home() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase font-bold">
-              {currentChallenge.durationHours ? "Time Left" : "Goal"}
+              {currentChallenge.durationMinutes ? "Time Left" : "Goal"}
             </p>
             <p className="text-lg font-display font-bold">
-              {currentChallenge.durationHours ? (
-                <TimeRemaining startDate={currentChallenge.startDate} durationHours={currentChallenge.durationHours} />
+              {currentChallenge.durationMinutes ? (
+                <TimeRemaining startDate={currentChallenge.startDate} durationMinutes={currentChallenge.durationMinutes} />
               ) : (
                 `${currentChallenge.targetMl}ml`
               )}
