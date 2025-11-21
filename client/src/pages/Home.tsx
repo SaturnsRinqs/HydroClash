@@ -10,10 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { motion } from "framer-motion";
 
-function TimeRemaining({ startDate, durationHours }: { startDate: string; durationHours: number }) {
+function TimeRemaining({ startDate, durationHours }: { startDate: string | null; durationHours: number | null }) {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
+    if (!startDate || !durationHours) {
+      setTimeLeft("No limit");
+      return;
+    }
+
     const calculateTimeLeft = () => {
       const start = new Date(startDate).getTime();
       const end = start + (durationHours * 60 * 60 * 1000);
@@ -60,13 +65,15 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch active challenges
+  // Fetch active challenges (includes recently completed ones)
   const { data: activeChallenges = [] } = useQuery<any[]>({
     queryKey: ["/api/challenges/active"],
     enabled: !!user,
+    refetchInterval: 5000, // Refresh every 5s to catch time-based completions
   });
 
-  const currentChallenge = activeChallenges[0]; // Use first active challenge
+  // Prioritize active challenges, but show completed ones if no active ones exist
+  const currentChallenge = activeChallenges.find(c => c.status === 'active') || activeChallenges[0];
 
   // Fetch leaderboard for current challenge
   const { data: leaderboard = [] } = useQuery<LeaderboardUser[]>({
@@ -96,6 +103,7 @@ export default function Home() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/challenges/${currentChallenge?.id}/leaderboard`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/challenges/active"] });
       toast({
         title: "Drink logged!",
         description: "Keep going, hydration champion! 💧",
@@ -113,6 +121,17 @@ export default function Home() {
         }, 500);
         return;
       }
+      
+      // Check if it's a challenge ended error
+      if (error.message.includes("challenge has ended")) {
+        toast({
+          title: "Challenge Complete! 🏆",
+          description: "This challenge has ended. Create a new one to continue!",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/challenges/active"] });
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to log drink. Try again.",
@@ -132,24 +151,29 @@ export default function Home() {
     );
   }
 
-  if (!currentChallenge) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <Card className="glass-panel p-8 text-center max-w-md">
-          <h2 className="text-2xl font-bold mb-4">No Active Challenges</h2>
-          <p className="text-muted-foreground mb-6">
-            Create your first challenge to start tracking your hydration!
-          </p>
-          <Link href="/challenge/new">
-            <a className="inline-block">
-              <button className="bg-primary text-black px-6 py-3 rounded-lg font-bold hover:bg-primary/90" data-testid="button-create-challenge">
-                Create Challenge
-              </button>
-            </a>
-          </Link>
-        </Card>
-      </div>
-    );
+  if (!currentChallenge || (currentChallenge.status === 'completed' && activeChallenges.length === 1 && activeChallenges[0].status === 'completed')) {
+    // Only show "no challenges" if truly no challenges exist, not if we have a just-completed one
+    const hasNoActiveChallenges = !currentChallenge || activeChallenges.every(c => c.status === 'completed');
+    
+    if (hasNoActiveChallenges && !currentChallenge) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center px-4">
+          <Card className="glass-panel p-8 text-center max-w-md">
+            <h2 className="text-2xl font-bold mb-4">No Active Challenges</h2>
+            <p className="text-muted-foreground mb-6">
+              Create your first challenge to start tracking your hydration!
+            </p>
+            <Link href="/challenge/new">
+              <a className="inline-block">
+                <button className="bg-primary text-black px-6 py-3 rounded-lg font-bold hover:bg-primary/90" data-testid="button-create-challenge">
+                  Create Challenge
+                </button>
+              </a>
+            </Link>
+          </Card>
+        </div>
+      );
+    }
   }
 
   return (
@@ -240,10 +264,31 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Action Area */}
-      <div className="fixed bottom-6 left-0 right-0 px-4 z-50 flex justify-center">
-        <DrinkInput onAdd={(amount) => logDrinkMutation.mutate(amount)} />
-      </div>
+      {/* Action Area - Only show if challenge is active */}
+      {currentChallenge?.status === 'active' && (
+        <div className="fixed bottom-6 left-0 right-0 px-4 z-50 flex justify-center">
+          <DrinkInput onAdd={(amount) => logDrinkMutation.mutate(amount)} />
+        </div>
+      )}
+
+      {/* Show completed message if challenge ended */}
+      {currentChallenge?.status === 'completed' && (
+        <div className="fixed bottom-6 left-0 right-0 px-4 z-50 flex justify-center">
+          <Card className="glass-panel p-6 text-center max-w-md">
+            <h3 className="text-2xl font-bold mb-2">🏆 Challenge Complete!</h3>
+            <p className="text-muted-foreground mb-4">
+              {leader ? `${leader.name} wins with ${leader.currentMl}ml!` : "Well done, everyone!"}
+            </p>
+            <Link href="/challenge/new">
+              <a className="inline-block">
+                <button className="bg-primary text-black px-6 py-3 rounded-lg font-bold hover:bg-primary/90">
+                  Start New Challenge
+                </button>
+              </a>
+            </Link>
+          </Card>
+        </div>
+      )}
 
       {/* Challenge Info */}
       <Card className="glass-panel p-6 mb-24">

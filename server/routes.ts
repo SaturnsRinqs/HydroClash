@@ -79,7 +79,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const challenges = await storage.getUserActiveChallenges(userId);
-      res.json(challenges);
+      
+      // Check and update status for each challenge
+      const updatedChallenges = await Promise.all(
+        challenges.map(c => storage.checkAndUpdateChallengeStatus(c.id))
+      );
+      
+      // Return all challenges (including just-completed ones) so UI can show completion state
+      res.json(updatedChallenges.filter(c => c !== undefined));
     } catch (error) {
       console.error("Error fetching active challenges:", error);
       res.status(500).json({ message: "Failed to fetch challenges" });
@@ -90,7 +97,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const challenges = await storage.getChallengesByUser(userId);
-      res.json(challenges);
+      
+      // Check and update status for each challenge
+      const updatedChallenges = await Promise.all(
+        challenges.map(c => storage.checkAndUpdateChallengeStatus(c.id))
+      );
+      
+      res.json(updatedChallenges.filter(c => c !== undefined));
     } catch (error) {
       console.error("Error fetching challenge history:", error);
       res.status(500).json({ message: "Failed to fetch history" });
@@ -99,7 +112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/challenges/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const challenge = await storage.getChallenge(req.params.id);
+      // Check and update status before returning
+      const challenge = await storage.checkAndUpdateChallengeStatus(req.params.id);
       if (!challenge) {
         return res.status(404).json({ message: "Challenge not found" });
       }
@@ -113,6 +127,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/challenges/:id/leaderboard', isAuthenticated, async (req: any, res) => {
     try {
       const challengeId = req.params.id;
+      
+      // Check and update challenge status before returning leaderboard
+      await storage.checkAndUpdateChallengeStatus(challengeId);
+      
       const leaderboard = await storage.getChallengeLeaderboard(challengeId);
       const participantIds = await storage.getChallengeParticipants(challengeId);
       
@@ -150,12 +168,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      if (!validation.data.challengeId) {
+        return res.status(400).json({ 
+          message: "Challenge ID is required" 
+        });
+      }
+
+      // Verify user is a participant
+      const participants = await storage.getChallengeParticipants(validation.data.challengeId);
+      if (!participants.includes(userId)) {
+        return res.status(403).json({ 
+          message: "You are not a participant in this challenge" 
+        });
+      }
+
+      // Check if challenge is still active before logging
+      const challenge = await storage.checkAndUpdateChallengeStatus(validation.data.challengeId);
+      if (!challenge || challenge.status !== 'active') {
+        return res.status(400).json({ 
+          message: "This challenge has ended. No more drinks can be logged." 
+        });
+      }
+
+      // Log the drink
       const drink = await storage.logDrink({
         ...validation.data,
         userId: userId,
       });
 
-      res.json(drink);
+      // Check if this drink completed the challenge
+      const updatedChallenge = await storage.checkAndUpdateChallengeStatus(validation.data.challengeId);
+      
+      res.json({ 
+        drink,
+        challengeCompleted: updatedChallenge?.status === 'completed'
+      });
     } catch (error) {
       console.error("Error logging drink:", error);
       res.status(500).json({ message: "Failed to log drink" });

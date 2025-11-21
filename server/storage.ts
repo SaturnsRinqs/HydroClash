@@ -28,6 +28,7 @@ export interface IStorage {
   getChallengesByUser(userId: string): Promise<Challenge[]>;
   getUserActiveChallenges(userId: string): Promise<Challenge[]>;
   updateChallengeStatus(id: string, status: string): Promise<void>;
+  checkAndUpdateChallengeStatus(challengeId: string): Promise<Challenge | undefined>;
 
   // Challenge participant operations
   addParticipant(participant: InsertChallengeParticipant): Promise<ChallengeParticipant>;
@@ -111,8 +112,38 @@ export class DatabaseStorage implements IStorage {
   async updateChallengeStatus(id: string, status: string): Promise<void> {
     await db
       .update(challenges)
-      .set({ status })
+      .set({ status, endDate: new Date() })
       .where(eq(challenges.id, id));
+  }
+
+  async checkAndUpdateChallengeStatus(challengeId: string): Promise<Challenge | undefined> {
+    const challenge = await this.getChallenge(challengeId);
+    if (!challenge || challenge.status !== 'active') {
+      return challenge;
+    }
+
+    let shouldComplete = false;
+
+    // Check if time limit exceeded
+    if (challenge.durationHours && challenge.startDate) {
+      const endTime = new Date(challenge.startDate).getTime() + (challenge.durationHours * 60 * 60 * 1000);
+      if (Date.now() >= endTime) {
+        shouldComplete = true;
+      }
+    }
+
+    // Check if anyone reached the target
+    const leaderboard = await this.getChallengeLeaderboard(challengeId);
+    if (leaderboard.length > 0 && leaderboard[0].totalMl >= challenge.targetMl) {
+      shouldComplete = true;
+    }
+
+    if (shouldComplete) {
+      await this.updateChallengeStatus(challengeId, 'completed');
+      return { ...challenge, status: 'completed', endDate: new Date() };
+    }
+
+    return challenge;
   }
 
   // Participant operations
