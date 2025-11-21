@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import History from "@/pages/History";
 import NewChallenge from "@/pages/NewChallenge";
+import Profile from "@/pages/Profile";
 
 function Router() {
   return (
@@ -13,6 +14,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/history" component={History} />
       <Route path="/challenge/new" component={NewChallenge} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );

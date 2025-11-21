@@ -114,8 +114,18 @@
   100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
 }
 
+@keyframes rise {
+  0% { bottom: -10px; transform: translateX(0); opacity: 0; }
+  50% { opacity: 1; }
+  100% { bottom: 100%; transform: translateX(-20px); opacity: 0; }
+}
+
 .animate-wave {
   animation: wave 8s linear infinite;
+}
+
+.animate-rise {
+  animation: rise 4s infinite linear;
 }
 
 .glass-panel {

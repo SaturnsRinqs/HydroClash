@@ -3,13 +3,32 @@ import { LiquidBar } from "@/components/LiquidBar";
 import { DrinkInput } from "@/components/DrinkInput";
 import { CURRENT_CHALLENGE, User } from "@/lib/mockData";
 import { Card } from "@/components/ui/card";
-import { Trophy, Timer, History, Users } from "lucide-react";
+import { Trophy, Timer, History, Settings, User as UserIcon } from "lucide-react";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
 
 export default function Home() {
   const [participants, setParticipants] = useState<User[]>(CURRENT_CHALLENGE.participants);
   
+  // Load user customization on mount
+  useEffect(() => {
+    const savedName = localStorage.getItem("hydro_username");
+    const savedColor = localStorage.getItem("hydro_color");
+    
+    if (savedName || savedColor) {
+      setParticipants(prev => prev.map(u => {
+        if (u.id === 'u1') {
+          return {
+            ...u,
+            name: savedName || u.name,
+            color: savedColor || u.color,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${savedName || 'Felix'}`
+          };
+        }
+        return u;
+      }));
+    }
+  }, []);
+
   // Sort participants by ml descending
   const sortedParticipants = [...participants].sort((a, b) => b.currentMl - a.currentMl);
 
@@ -32,11 +51,18 @@ export default function Home() {
           </h1>
           <p className="text-muted-foreground text-sm">Current Challenge: {CURRENT_CHALLENGE.title}</p>
         </div>
-        <Link href="/history">
-          <a className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-white">
-            <History className="w-6 h-6" />
-          </a>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/history">
+            <a className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-white" title="History">
+              <History className="w-6 h-6" />
+            </a>
+          </Link>
+          <Link href="/profile">
+            <a className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-white" title="Profile">
+              <UserIcon className="w-6 h-6" />
+            </a>
+          </Link>
+        </div>
       </header>
 
       {/* Stats Card */}

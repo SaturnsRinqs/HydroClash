@@ -38,14 +38,20 @@ export function LiquidBar({ current, max, color, name, avatar, isUser, rank }: L
         
         {/* Liquid Fill */}
         <motion.div 
-          className="absolute bottom-0 left-0 right-0 w-full"
+          className="absolute bottom-0 left-0 right-0 w-full overflow-hidden"
           initial={{ height: 0 }}
           animate={{ height: `${percentage}%` }}
           transition={{ type: "spring", stiffness: 50, damping: 15 }}
           style={{ backgroundColor: color }}
         >
-          {/* Bubbles / Glow */}
+          {/* Bubbles / Glow - Vertical Animation */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          
+          {/* Rising Bubbles */}
+          <div className="absolute left-[20%] w-1 h-1 bg-white/40 rounded-full animate-rise" style={{ animationDuration: '3s', animationDelay: '0s' }} />
+          <div className="absolute left-[50%] w-2 h-2 bg-white/30 rounded-full animate-rise" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+          <div className="absolute left-[80%] w-1.5 h-1.5 bg-white/20 rounded-full animate-rise" style={{ animationDuration: '4s', animationDelay: '2s' }} />
+          <div className="absolute left-[30%] w-1 h-1 bg-white/30 rounded-full animate-rise" style={{ animationDuration: '6s', animationDelay: '3s' }} />
           
           {/* Wave Top */}
           <div className="absolute -top-3 left-[-50%] right-[-50%] h-6 w-[200%] bg-white/30 rounded-[40%] animate-wave" />
