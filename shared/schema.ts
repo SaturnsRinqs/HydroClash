@@ -51,6 +51,7 @@ export const challenges = pgTable("challenges", {
   durationHours: integer("duration_hours"), // null = no time limit
   type: varchar("type").notNull(), // 'daily' or 'total'
   status: varchar("status").notNull().default("active"), // 'active' or 'completed'
+  inviteCode: varchar("invite_code").unique().notNull().default(sql`substring(md5(random()::text), 1, 8)`),
   startDate: timestamp("start_date").defaultNow(),
   endDate: timestamp("end_date"),
   createdAt: timestamp("created_at").defaultNow(),

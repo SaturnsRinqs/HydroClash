@@ -124,6 +124,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/challenges/invite/:inviteCode', async (req: any, res) => {
+    try {
+      const challenge = await storage.getChallengeByInviteCode(req.params.inviteCode);
+      if (!challenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      res.json(challenge);
+    } catch (error) {
+      console.error("Error fetching challenge by invite:", error);
+      res.status(500).json({ message: "Failed to fetch challenge" });
+    }
+  });
+
+  app.post('/api/challenges/:id/join', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const challengeId = req.params.id;
+      
+      const challenge = await storage.getChallenge(challengeId);
+      if (!challenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+
+      // Check if user is already a participant
+      const participants = await storage.getChallengeParticipants(challengeId);
+      if (participants.includes(userId)) {
+        return res.status(400).json({ message: "You are already in this challenge" });
+      }
+
+      // Add user as participant
+      await storage.addParticipant({
+        challengeId: challengeId,
+        userId: userId,
+      });
+
+      res.json({ success: true, challenge });
+    } catch (error) {
+      console.error("Error joining challenge:", error);
+      res.status(500).json({ message: "Failed to join challenge" });
+    }
+  });
+
   app.get('/api/challenges/:id/leaderboard', isAuthenticated, async (req: any, res) => {
     try {
       const challengeId = req.params.id;

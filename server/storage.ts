@@ -25,6 +25,7 @@ export interface IStorage {
   // Challenge operations
   createChallenge(challenge: InsertChallenge): Promise<Challenge>;
   getChallenge(id: string): Promise<Challenge | undefined>;
+  getChallengeByInviteCode(inviteCode: string): Promise<Challenge | undefined>;
   getChallengesByUser(userId: string): Promise<Challenge[]>;
   getUserActiveChallenges(userId: string): Promise<Challenge[]>;
   updateChallengeStatus(id: string, status: string): Promise<void>;
@@ -79,6 +80,11 @@ export class DatabaseStorage implements IStorage {
 
   async getChallenge(id: string): Promise<Challenge | undefined> {
     const [challenge] = await db.select().from(challenges).where(eq(challenges.id, id));
+    return challenge;
+  }
+
+  async getChallengeByInviteCode(inviteCode: string): Promise<Challenge | undefined> {
+    const [challenge] = await db.select().from(challenges).where(eq(challenges.inviteCode, inviteCode));
     return challenge;
   }
 

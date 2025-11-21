@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { LiquidBar } from "@/components/LiquidBar";
 import { DrinkInput } from "@/components/DrinkInput";
 import { Card } from "@/components/ui/card";
-import { Trophy, Timer, History, User as UserIcon } from "lucide-react";
+import { Trophy, Timer, History, User as UserIcon, Share2, Copy, Check } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,6 +64,7 @@ export default function Home() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [copiedInvite, setCopiedInvite] = useState(false);
 
   // Fetch active challenges (includes recently completed ones)
   const { data: activeChallenges = [] } = useQuery<any[]>({
@@ -313,6 +314,34 @@ export default function Home() {
             {currentChallenge.durationHours 
               ? "First to reach the goal OR whoever has the most when time runs out wins!"
               : "First to reach the goal wins!"}
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => {
+                const inviteUrl = `${window.location.origin}/?invite=${currentChallenge.inviteCode}`;
+                navigator.clipboard.writeText(inviteUrl);
+                setCopiedInvite(true);
+                toast({
+                  title: "Invite link copied!",
+                  description: "Share this link to invite friends to your challenge.",
+                });
+                setTimeout(() => setCopiedInvite(false), 2000);
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors text-sm font-medium"
+              data-testid="button-copy-invite"
+            >
+              {copiedInvite ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  Copy Invite Link
+                </>
+              )}
+            </button>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Participants</span>
