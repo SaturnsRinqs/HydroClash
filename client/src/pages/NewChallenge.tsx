@@ -18,8 +18,11 @@ export default function NewChallenge() {
     title: "",
     type: "daily",
     targetMl: 3000,
-    durationHours: null as number | null,
+    durationMinutes: null as number | null,
   });
+
+  const [durationMode, setDurationMode] = useState<'hours' | 'minutes' | 'none'>('none');
+  const [durationValue, setDurationValue] = useState(1);
 
   const createChallengeMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -141,29 +144,72 @@ export default function NewChallenge() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="duration" className="text-white">Time Limit (Optional)</Label>
-            <div className="grid grid-cols-2 gap-4">
+            <Label className="text-white">Time Limit (Optional)</Label>
+            <RadioGroup 
+              value={durationMode} 
+              onValueChange={(value) => {
+                setDurationMode(value as 'hours' | 'minutes' | 'none');
+                if (value === 'none') {
+                  setFormData({...formData, durationMinutes: null});
+                }
+              }}
+              className="grid grid-cols-3 gap-2"
+            >
               <div>
-                <Label htmlFor="hours" className="text-xs text-muted-foreground">Hours</Label>
-                <Input 
-                  id="hours" 
-                  type="number" 
-                  placeholder="e.g., 24"
-                  min="0"
-                  onChange={(e) => {
-                    const hours = e.target.value ? parseInt(e.target.value) : null;
-                    setFormData({...formData, durationHours: hours});
-                  }}
-                  className="bg-black/20 border-white/10 h-12" 
-                  data-testid="input-duration"
-                />
+                <RadioGroupItem value="none" id="no-limit" className="peer sr-only" />
+                <Label
+                  htmlFor="no-limit"
+                  className="flex items-center justify-center rounded-lg border-2 border-muted bg-transparent p-3 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/20 cursor-pointer text-sm font-medium"
+                >
+                  No Limit
+                </Label>
               </div>
-              <div className="flex items-end">
-                <p className="text-xs text-muted-foreground p-3">
-                  Leave blank for no time limit. Challenge ends when someone reaches the goal OR time runs out.
-                </p>
+              <div>
+                <RadioGroupItem value="hours" id="hours-mode" className="peer sr-only" />
+                <Label
+                  htmlFor="hours-mode"
+                  className="flex items-center justify-center rounded-lg border-2 border-muted bg-transparent p-3 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/20 cursor-pointer text-sm font-medium"
+                >
+                  Hours
+                </Label>
               </div>
-            </div>
+              <div>
+                <RadioGroupItem value="minutes" id="minutes-mode" className="peer sr-only" />
+                <Label
+                  htmlFor="minutes-mode"
+                  className="flex items-center justify-center rounded-lg border-2 border-muted bg-transparent p-3 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/20 cursor-pointer text-sm font-medium"
+                >
+                  Minutes
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {durationMode !== 'none' && (
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <Label htmlFor="duration-value" className="text-xs text-muted-foreground">
+                    Duration ({durationMode === 'hours' ? 'hours' : 'minutes'})
+                  </Label>
+                  <Input 
+                    id="duration-value" 
+                    type="number" 
+                    value={durationValue}
+                    min="1"
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setDurationValue(val);
+                      const minutes = durationMode === 'hours' ? val * 60 : val;
+                      setFormData({...formData, durationMinutes: minutes});
+                    }}
+                    className="bg-black/20 border-white/10 h-12"
+                    data-testid="input-duration-value"
+                  />
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground p-2 bg-white/5 rounded">
+              Challenge ends when someone reaches the goal OR time runs out (whoever reaches first).
+            </p>
           </div>
         </div>
 

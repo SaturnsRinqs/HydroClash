@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { LiquidBar } from "@/components/LiquidBar";
 import { DrinkInput } from "@/components/DrinkInput";
 import { Card } from "@/components/ui/card";
-import { Trophy, Timer, History, User as UserIcon, Share2, Copy, Check } from "lucide-react";
+import { Trophy, Timer, History, User as UserIcon, Share2, Copy, Check, Wine } from "lucide-react";
+import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -272,22 +273,47 @@ export default function Home() {
         </div>
       )}
 
-      {/* Show completed message if challenge ended */}
+      {/* Show animated winner announcement if challenge ended */}
       {currentChallenge?.status === 'completed' && (
         <div className="fixed bottom-6 left-0 right-0 px-4 z-50 flex justify-center">
-          <Card className="glass-panel p-6 text-center max-w-md">
-            <h3 className="text-2xl font-bold mb-2">🏆 Challenge Complete!</h3>
-            <p className="text-muted-foreground mb-4">
-              {leader ? `${leader.name} wins with ${leader.currentMl}ml!` : "Well done, everyone!"}
-            </p>
-            <Link href="/challenge/new">
-              <a className="inline-block">
-                <button className="bg-primary text-black px-6 py-3 rounded-lg font-bold hover:bg-primary/90">
-                  Start New Challenge
-                </button>
-              </a>
-            </Link>
-          </Card>
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 100, damping: 15 }}
+          >
+            <Card className="glass-panel p-6 text-center max-w-md">
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 0.6, repeat: Infinity }}
+                className="mb-2"
+              >
+                <div className="flex justify-center gap-2 mb-2">
+                  <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                    <Wine className="w-8 h-8 text-primary" />
+                  </motion.div>
+                  <Trophy className="w-8 h-8 text-yellow-400" />
+                  <motion.div animate={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                    <Wine className="w-8 h-8 text-primary" />
+                  </motion.div>
+                </div>
+              </motion.div>
+              <h3 className="text-2xl font-bold mb-2">🎉 Challenge Complete!</h3>
+              <p className="text-lg font-bold text-primary mb-1">
+                {leader ? `🏆 ${leader.name} Wins! 🏆` : "Well done, everyone!"}
+              </p>
+              <p className="text-muted-foreground mb-4 text-sm">
+                {leader ? `Final Score: ${leader.currentMl}ml` : ""}
+                {currentChallenge.completionReason === 'time_limit' && !leader?.currentMl ? " (Time's up!)" : ""}
+              </p>
+              <Link href="/challenge/new">
+                <a className="inline-block">
+                  <button className="bg-primary text-black px-6 py-3 rounded-lg font-bold hover:bg-primary/90" data-testid="button-new-challenge">
+                    Start New Challenge
+                  </button>
+                </a>
+              </Link>
+            </Card>
+          </motion.div>
         </div>
       )}
 
@@ -304,14 +330,19 @@ export default function Home() {
             <span className="text-muted-foreground">Target Goal</span>
             <span className="font-mono">{currentChallenge.targetMl}ml</span>
           </div>
-          {currentChallenge.durationHours && (
+          {currentChallenge.durationMinutes && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Duration</span>
-              <span className="font-mono">{currentChallenge.durationHours}h</span>
+              <span className="font-mono">
+                {currentChallenge.durationMinutes >= 60 
+                  ? `${Math.floor(currentChallenge.durationMinutes / 60)}h ${currentChallenge.durationMinutes % 60}m`
+                  : `${currentChallenge.durationMinutes}m`
+                }
+              </span>
             </div>
           )}
           <div className="text-xs text-muted-foreground italic border-l-2 border-primary/50 pl-3 py-1">
-            {currentChallenge.durationHours 
+            {currentChallenge.durationMinutes 
               ? "First to reach the goal OR whoever has the most when time runs out wins!"
               : "First to reach the goal wins!"}
           </div>
