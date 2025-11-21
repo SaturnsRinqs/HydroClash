@@ -7,10 +7,12 @@ import Home from "@/pages/Home";
 import History from "@/pages/History";
 import NewChallenge from "@/pages/NewChallenge";
 import Profile from "@/pages/Profile";
+import Auth from "@/pages/Auth";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/auth" component={Auth} />
       <Route path="/" component={Home} />
       <Route path="/history" component={History} />
       <Route path="/challenge/new" component={NewChallenge} />
