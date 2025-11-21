@@ -9,20 +9,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { motion } from "framer-motion";
 
-function TimeRemaining({ startDate, durationHours }: { startDate: string | null; durationHours: number | null }) {
+function TimeRemaining({ startDate, durationMinutes }: { startDate: string | null; durationMinutes: number | null }) {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
-    if (!startDate || !durationHours) {
+    if (!startDate || !durationMinutes) {
       setTimeLeft("No limit");
       return;
     }
 
     const calculateTimeLeft = () => {
       const start = new Date(startDate).getTime();
-      const end = start + (durationHours * 60 * 60 * 1000);
+      const end = start + (durationMinutes * 60 * 1000);
       const now = Date.now();
       const diff = end - now;
 
