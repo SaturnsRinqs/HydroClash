@@ -1,45 +1,118 @@
 import { useState, useEffect } from "react";
 import { LiquidBar } from "@/components/LiquidBar";
 import { DrinkInput } from "@/components/DrinkInput";
-import { CURRENT_CHALLENGE, User } from "@/lib/mockData";
 import { Card } from "@/components/ui/card";
-import { Trophy, Timer, History, Settings, User as UserIcon } from "lucide-react";
+import { Trophy, Timer, History, User as UserIcon } from "lucide-react";
 import { Link } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+
+interface LeaderboardUser {
+  id: string;
+  name: string;
+  avatar: string;
+  currentMl: number;
+  color: string;
+}
 
 export default function Home() {
-  const [participants, setParticipants] = useState<User[]>(CURRENT_CHALLENGE.participants);
-  
-  // Load user customization on mount
-  useEffect(() => {
-    const savedName = localStorage.getItem("hydro_username");
-    const savedColor = localStorage.getItem("hydro_color");
-    
-    if (savedName || savedColor) {
-      setParticipants(prev => prev.map(u => {
-        if (u.id === 'u1') {
-          return {
-            ...u,
-            name: savedName || u.name,
-            color: savedColor || u.color,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${savedName || 'Felix'}`
-          };
-        }
-        return u;
-      }));
-    }
-  }, []);
+  const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Sort participants by ml descending
-  const sortedParticipants = [...participants].sort((a, b) => b.currentMl - a.currentMl);
+  // Fetch active challenges
+  const { data: activeChallenges = [] } = useQuery<any[]>({
+    queryKey: ["/api/challenges/active"],
+    enabled: !!user,
+  });
 
-  const handleAddDrink = (amount: number) => {
-    setParticipants(prev => prev.map(u => {
-      if (u.id === 'u1') { // Current user
-        return { ...u, currentMl: u.currentMl + amount };
+  const currentChallenge = activeChallenges[0]; // Use first active challenge
+
+  // Fetch leaderboard for current challenge
+  const { data: leaderboard = [] } = useQuery<LeaderboardUser[]>({
+    queryKey: [`/api/challenges/${currentChallenge?.id}/leaderboard`],
+    enabled: !!currentChallenge,
+  });
+
+  // Log drink mutation
+  const logDrinkMutation = useMutation({
+    mutationFn: async (amountMl: number) => {
+      const response = await fetch("/api/drinks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          amountMl,
+          challengeId: currentChallenge?.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`${response.status}: ${error.message}`);
       }
-      return u;
-    }));
-  };
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/challenges/${currentChallenge?.id}/leaderboard`] });
+      toast({
+        title: "Drink logged!",
+        description: "Keep going, hydration champion! 💧",
+      });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to log drink. Try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sortedLeaderboard = [...leaderboard].sort((a, b) => b.currentMl - a.currentMl);
+  const leader = sortedLeaderboard[0];
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!currentChallenge) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        <Card className="glass-panel p-8 text-center max-w-md">
+          <h2 className="text-2xl font-bold mb-4">No Active Challenges</h2>
+          <p className="text-muted-foreground mb-6">
+            Create your first challenge to start tracking your hydration!
+          </p>
+          <Link href="/challenge/new">
+            <a className="inline-block">
+              <button className="bg-primary text-black px-6 py-3 rounded-lg font-bold hover:bg-primary/90" data-testid="button-create-challenge">
+                Create Challenge
+              </button>
+            </a>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24 px-4 pt-6 max-w-2xl mx-auto">
@@ -49,16 +122,16 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-white flex items-center gap-2">
             Hydro<span className="text-primary">Clash</span>
           </h1>
-          <p className="text-muted-foreground text-sm">Current Challenge: {CURRENT_CHALLENGE.title}</p>
+          <p className="text-muted-foreground text-sm">Current: {currentChallenge.title}</p>
         </div>
         <div className="flex gap-2">
           <Link href="/history">
-            <a className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-white" title="History">
+            <a className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-white" title="History" data-testid="link-history">
               <History className="w-6 h-6" />
             </a>
           </Link>
           <Link href="/profile">
-            <a className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-white" title="Profile">
+            <a className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-white" title="Profile" data-testid="link-profile">
               <UserIcon className="w-6 h-6" />
             </a>
           </Link>
@@ -73,7 +146,9 @@ export default function Home() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase font-bold">Leader</p>
-            <p className="text-lg font-display font-bold">{sortedParticipants[0].name}</p>
+            <p className="text-lg font-display font-bold" data-testid="text-leader">
+              {leader?.name || "N/A"}
+            </p>
           </div>
         </Card>
         <Card className="bg-card/40 border-white/5 backdrop-blur-sm p-4 flex items-center gap-3">
@@ -81,21 +156,23 @@ export default function Home() {
             <Timer className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground uppercase font-bold">Time Left</p>
-            <p className="text-lg font-display font-bold">04:22:10</p>
+            <p className="text-xs text-muted-foreground uppercase font-bold">Goal</p>
+            <p className="text-lg font-display font-bold">{currentChallenge.targetMl}ml</p>
           </div>
         </Card>
       </div>
 
       {/* Main Visualization */}
       <div className="relative min-h-[400px] flex items-end justify-center gap-4 md:gap-8 mb-12 px-2">
-        {sortedParticipants.map((user, index) => (
+        {sortedLeaderboard.map((participant, index) => (
           <LiquidBar 
-            key={user.id}
-            {...user}
-            current={user.currentMl}
-            max={CURRENT_CHALLENGE.targetMl}
-            isUser={user.id === 'u1'}
+            key={participant.id}
+            current={participant.currentMl}
+            max={currentChallenge.targetMl}
+            color={participant.color}
+            name={participant.name}
+            avatar={participant.avatar}
+            isUser={participant.id === user?.id}
             rank={index + 1}
           />
         ))}
@@ -103,7 +180,7 @@ export default function Home() {
 
       {/* Action Area */}
       <div className="fixed bottom-6 left-0 right-0 px-4 z-50 flex justify-center">
-        <DrinkInput onAdd={handleAddDrink} />
+        <DrinkInput onAdd={(amount) => logDrinkMutation.mutate(amount)} />
       </div>
 
       {/* Challenge Info */}
@@ -111,18 +188,18 @@ export default function Home() {
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-bold font-display">Challenge Details</h3>
           <Link href="/challenge/new">
-            <a className="text-xs text-primary hover:underline">New Challenge</a>
+            <a className="text-xs text-primary hover:underline" data-testid="link-new-challenge">New Challenge</a>
           </Link>
         </div>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Target</span>
-            <span className="font-mono">{CURRENT_CHALLENGE.targetMl}ml / day</span>
+            <span className="font-mono">{currentChallenge.targetMl}ml / {currentChallenge.type}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Participants</span>
             <div className="flex -space-x-2">
-              {participants.map((p) => (
+              {sortedLeaderboard.slice(0, 5).map((p) => (
                  <img 
                   key={p.id} 
                   src={p.avatar} 
@@ -130,16 +207,23 @@ export default function Home() {
                   className="w-6 h-6 rounded-full border border-background"
                 />
               ))}
+              {sortedLeaderboard.length > 5 && (
+                <div className="w-6 h-6 rounded-full border border-background bg-muted flex items-center justify-center text-xs">
+                  +{sortedLeaderboard.length - 5}
+                </div>
+              )}
             </div>
           </div>
           <div className="w-full bg-white/5 rounded-full h-2 mt-2 overflow-hidden">
              <div 
                className="h-full bg-primary" 
-               style={{ width: `${(participants.find(u => u.id === 'u1')?.currentMl || 0) / CURRENT_CHALLENGE.targetMl * 100}%` }} 
+               style={{ 
+                 width: `${Math.min(100, ((sortedLeaderboard.find(u => u.id === user?.id)?.currentMl || 0) / currentChallenge.targetMl * 100))}%` 
+               }} 
              />
           </div>
           <p className="text-xs text-center text-muted-foreground mt-2">
-            You are {(participants.find(u => u.id === 'u1')?.currentMl || 0)}ml towards your goal.
+            You are {sortedLeaderboard.find(u => u.id === user?.id)?.currentMl || 0}ml towards your goal.
           </p>
         </div>
       </Card>
