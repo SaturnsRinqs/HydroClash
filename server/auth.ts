@@ -101,20 +101,16 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  // Use fixed callback URL for development, domain-based for production
-  const callbackURL = process.env.NODE_ENV === "production"
-    ? "https://hydroclash.replit.dev/api/auth/callback" // Update with your production domain
-    : "http://localhost:8008/api/auth/callback";
-
-  const strategy = new Strategy(
+  passport.use("google", new Strategy(
     {
       config,
       scope: "openid email profile",
-      callbackURL,
+      callbackURL: process.env.NODE_ENV === "production"
+        ? "https://hydroclash.replit.dev/api/auth/callback"
+        : "http://localhost:5000/api/auth/callback",
     },
     verify,
-  );
-  passport.use("google", strategy);
+  ));
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
