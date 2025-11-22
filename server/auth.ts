@@ -104,13 +104,13 @@ export async function setupAuth(app: Express) {
   // Keep track of registered strategies
   const registeredStrategies = new Set<string>();
 
-  // Helper function to ensure strategy exists for a domain
-  const ensureStrategy = (domain: string) => {
-    const strategyName = `google:${domain}`;
+  // Helper function to ensure strategy exists for a host (includes port)
+  const ensureStrategy = (host: string) => {
+    const strategyName = `google:${host}`;
     if (!registeredStrategies.has(strategyName)) {
       const callbackURL = process.env.NODE_ENV === "production" 
-        ? `https://${domain}/api/auth/callback`
-        : `http://${domain}/api/auth/callback`;
+        ? `https://${host}/api/auth/callback`
+        : `http://${host}/api/auth/callback`;
       
       const strategy = new Strategy(
         {
@@ -130,15 +130,17 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/auth/login", (req, res, next) => {
-    ensureStrategy(req.hostname);
-    passport.authenticate(`google:${req.hostname}`, {
+    const host = req.get("host") || "localhost:8008";
+    ensureStrategy(host);
+    passport.authenticate(`google:${host}`, {
       scope: ["openid", "email", "profile"],
     })(req, res, next);
   });
 
   app.get("/api/auth/callback", (req, res, next) => {
-    ensureStrategy(req.hostname);
-    passport.authenticate(`google:${req.hostname}`, {
+    const host = req.get("host") || "localhost:8008";
+    ensureStrategy(host);
+    passport.authenticate(`google:${host}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/",
     })(req, res, next);
