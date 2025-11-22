@@ -21,7 +21,7 @@ function validateOAuthCredentials() {
     console.error("To get credentials:");
     console.error("  1. Go to https://console.cloud.google.com/apis/credentials");
     console.error("  2. Create an OAuth 2.0 Client ID (Web application)");
-    console.error("  3. Add authorized redirect URI: http://localhost:5173/api/auth/callback");
+    console.error("  3. Add authorized redirect URI: http://localhost:8008/api/auth/callback");
     console.error("  4. Copy Client ID and Secret to .env.local\n");
     process.exit(1);
   }
