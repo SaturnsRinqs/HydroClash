@@ -101,46 +101,32 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  // Keep track of registered strategies
-  const registeredStrategies = new Set<string>();
+  // Use fixed callback URL for development, domain-based for production
+  const callbackURL = process.env.NODE_ENV === "production"
+    ? "https://hydroclash.replit.dev/api/auth/callback" // Update with your production domain
+    : "http://localhost:8008/api/auth/callback";
 
-  // Helper function to ensure strategy exists for a host (includes port)
-  const ensureStrategy = (host: string) => {
-    const strategyName = `google:${host}`;
-    if (!registeredStrategies.has(strategyName)) {
-      const callbackURL = process.env.NODE_ENV === "production" 
-        ? `https://${host}/api/auth/callback`
-        : `http://${host}/api/auth/callback`;
-      
-      const strategy = new Strategy(
-        {
-          name: strategyName,
-          config,
-          scope: "openid email profile",
-          callbackURL,
-        },
-        verify,
-      );
-      passport.use(strategy);
-      registeredStrategies.add(strategyName);
-    }
-  };
+  const strategy = new Strategy(
+    {
+      config,
+      scope: "openid email profile",
+      callbackURL,
+    },
+    verify,
+  );
+  passport.use("google", strategy);
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/auth/login", (req, res, next) => {
-    const host = req.get("host") || "localhost:8008";
-    ensureStrategy(host);
-    passport.authenticate(`google:${host}`, {
+    passport.authenticate("google", {
       scope: ["openid", "email", "profile"],
     })(req, res, next);
   });
 
   app.get("/api/auth/callback", (req, res, next) => {
-    const host = req.get("host") || "localhost:8008";
-    ensureStrategy(host);
-    passport.authenticate(`google:${host}`, {
+    passport.authenticate("google", {
       successReturnToOrRedirect: "/",
       failureRedirect: "/",
     })(req, res, next);
