@@ -1,18 +1,23 @@
-// Set PORT immediately - BEFORE any other imports or code
-process.env.PORT = process.env.PORT || "8008";
-
 import { config } from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Server } from "node:http";
 
-// Load .env.local file - use dirname to get the directory where this file is located
+// Load .env.local file for local development (Windows & Unix compatible)
+// This loads DATABASE_URL, OAuth credentials, and other secrets
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, "../.env.local");
+config({ path: envPath });
 
-// Load environment variables from .env.local
-const result = config({ path: envPath });
+// Ensure critical environment variables are set
+// When using cross-env in npm script: cross-env NODE_ENV=development PORT=8008 tsx server/index-dev.ts
+if (!process.env.PORT) {
+  process.env.PORT = "8008";
+}
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = "development";
+}
 
 import type { Express } from "express";
 import { nanoid } from "nanoid";

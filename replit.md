@@ -7,6 +7,19 @@ HydroClash is a gamified hydration tracking application that enables users to cr
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Development environment: Windows machine with cross-env for cross-platform compatibility.
+
+## Development Setup (Windows)
+
+**npm script configuration for package.json:**
+```json
+"dev": "cross-env NODE_ENV=development PORT=8008 tsx server/index-dev.ts"
+```
+
+This uses `cross-env` to ensure environment variables work correctly on Windows. The app will:
+- Run on http://localhost:8008 for development
+- Load OAuth credentials and database URL from .env.local
+- Support Google OAuth with callback URL: http://localhost:8008/api/auth/callback
 
 ## System Architecture
 
@@ -119,3 +132,26 @@ Preferred communication style: Simple, everyday language.
 - Fetch API with credentials included for session cookie transmission
 - Centralized error handling for 401 Unauthorized responses
 - Query key structure: `["/api", "path", "segments"]` for cache organization
+
+## Recent Changes (November 22, 2025)
+
+**Login Flow Improvements:**
+- Added dedicated `/account` page as post-login landing page
+- Account page displays welcome message and navigation buttons to:
+  - Active Challenges (Home page)
+  - Challenge History
+  - Create Challenge
+  - Profile Settings
+- OAuth callback now redirects to `/account` instead of landing page
+- Updated routing in App.tsx to show Account page after authentication
+
+**Port Configuration:**
+- Changed development port from 5000 to 8008 (as per user preference)
+- Updated OAuth callback URL to http://localhost:8008/api/auth/callback
+- Default port in app.ts set to 8008 for consistency
+- Supports cross-env for Windows compatibility
+
+**Windows Compatibility:**
+- Installed cross-env package for cross-platform environment variable handling
+- Environment loading: .env.local is loaded via dotenv on startup
+- Both PORT and NODE_ENV default to safe values if not set by cross-env
