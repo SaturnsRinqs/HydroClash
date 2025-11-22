@@ -20,14 +20,16 @@ export default function Landing() {
           Challenge your friends to see who can stay hydrated. <br />
           Track drinks. Dominate leaderboards. Win glory.
         </p>
-        <Button 
-          size="lg" 
-          className="h-16 px-12 text-xl font-bold bg-primary text-black hover:bg-primary/90 shadow-[0_0_30px_-5px_rgba(var(--primary),0.6)]"
-          onClick={() => window.location.href = '/api/auth/login'}
-          data-testid="button-login"
-        >
-          Start Competing <Droplets className="ml-2 w-6 h-6" />
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            size="lg" 
+            className="h-16 px-12 text-xl font-bold bg-primary text-black hover:bg-primary/90 shadow-[0_0_30px_-5px_rgba(var(--primary),0.6)]"
+            onClick={() => window.location.href = '/api/auth/login'}
+            data-testid="button-login"
+          >
+            Start Competing <Droplets className="ml-2 w-6 h-6" />
+          </Button>
+        </div>
       </motion.div>
 
       {/* Features */}

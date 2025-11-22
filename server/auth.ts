@@ -22,7 +22,8 @@ function validateOAuthCredentials() {
     console.error("  1. Go to https://console.cloud.google.com/apis/credentials");
     console.error("  2. Create an OAuth 2.0 Client ID (Web application)");
     console.error("  3. Add authorized redirect URI: http://localhost:8008/api/auth/callback");
-    console.error("  4. Copy Client ID and Secret to .env.local\n");
+    console.error("  4. Make sure the redirect URI EXACTLY matches your development URL");
+    console.error("  5. Copy Client ID and Secret to .env.local\n");
     process.exit(1);
   }
 }
@@ -107,7 +108,7 @@ export async function setupAuth(app: Express) {
       scope: "openid email profile",
       callbackURL: process.env.NODE_ENV === "production"
         ? "https://hydroclash.replit.dev/api/auth/callback"
-        : "http://localhost:5000/api/auth/callback",
+        : "http://localhost:8008/api/auth/callback",
     },
     verify,
   ));
@@ -123,7 +124,7 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/auth/callback", (req, res, next) => {
     passport.authenticate("google", {
-      successReturnToOrRedirect: "/",
+      successReturnToOrRedirect: "/account",
       failureRedirect: "/",
     })(req, res, next);
   });

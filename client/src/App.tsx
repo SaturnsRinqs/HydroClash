@@ -8,6 +8,7 @@ import History from "@/pages/History";
 import NewChallenge from "@/pages/NewChallenge";
 import Profile from "@/pages/Profile";
 import Landing from "@/pages/Landing";
+import Account from "@/pages/Account";
 import { useAuth } from "@/hooks/useAuth";
 
 function Router() {
@@ -15,11 +16,14 @@ function Router() {
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
+      {isLoading ? (
+        <Route path="/" component={Landing} />
+      ) : !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/account" component={Account} />
           <Route path="/history" component={History} />
           <Route path="/challenge/new" component={NewChallenge} />
           <Route path="/profile" component={Profile} />

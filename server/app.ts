@@ -76,9 +76,9 @@ export default async function runApp(
   await setup(app, server);
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Default to 5000 if not specified.
+  // Default to 8008 for development.
   // this serves both the API and the client.
-  const port = parseInt(process.env.PORT || '5000', 10);
+  const port = parseInt(process.env.PORT || '8008', 10);
   server.listen({
     port,
     host: "0.0.0.0",
