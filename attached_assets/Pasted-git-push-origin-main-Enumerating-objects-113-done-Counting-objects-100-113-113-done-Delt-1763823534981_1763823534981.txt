@@ -1,0 +1,47 @@
+git push origin main
+Enumerating objects: 113, done.
+Counting objects: 100% (113/113), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (94/94), done.
+Writing objects: 100% (94/94), 18.76 KiB | 2.68 MiB/s, done.
+Total 94 (delta 77), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (77/77), completed with 17 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Google OAuth Client ID ————————————————————————————
+remote:        locations:
+remote:          - commit: f65bd906a130d46f1f22f7fd7e37e224355c4625
+remote:            path: .env.local:8
+remote:          - commit: 882d20e884d0005abd01bffdb7fa875216771131
+remote:            path: .env.local:8
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/SaturnsRinqs/HydroClash/security/secret-scanning/unblock-secret/35q1J8J059ezip7VNIdAxm58X8t
+remote:     
+remote:     
+remote:       —— Google OAuth Client Secret ————————————————————————
+remote:        locations:
+remote:          - commit: f65bd906a130d46f1f22f7fd7e37e224355c4625
+remote:            path: .env.local:9
+remote:          - commit: 882d20e884d0005abd01bffdb7fa875216771131
+remote:            path: .env.local:9
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/SaturnsRinqs/HydroClash/security/secret-scanning/unblock-secret/35q1J6wNmXJ6PnjGf9pXRPp5rgW
+remote:     
+remote: 
+remote: 
+To https://github.com/SaturnsRinqs/HydroClash.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/SaturnsRinqs/HydroClash.git'
