@@ -23,7 +23,7 @@ export default function Landing() {
         <Button 
           size="lg" 
           className="h-16 px-12 text-xl font-bold bg-primary text-black hover:bg-primary/90 shadow-[0_0_30px_-5px_rgba(var(--primary),0.6)]"
-          onClick={() => window.location.href = '/api/login'}
+          onClick={() => window.location.href = '/api/auth/login'}
           data-testid="button-login"
         >
           Start Competing <Droplets className="ml-2 w-6 h-6" />

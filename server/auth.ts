@@ -8,8 +8,28 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+// Validate required OAuth credentials
+function validateOAuthCredentials() {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error("\n❌ Google OAuth credentials are missing!\n");
+    console.error("Please set these environment variables in your .env.local file:");
+    console.error("  GOOGLE_OAUTH_CLIENT_ID=your_client_id");
+    console.error("  GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret\n");
+    console.error("To get credentials:");
+    console.error("  1. Go to https://console.cloud.google.com/apis/credentials");
+    console.error("  2. Create an OAuth 2.0 Client ID (Web application)");
+    console.error("  3. Add authorized redirect URI: http://localhost:5173/api/auth/callback");
+    console.error("  4. Copy Client ID and Secret to .env.local\n");
+    process.exit(1);
+  }
+}
+
 const getOidcConfig = memoize(
   async () => {
+    validateOAuthCredentials();
     return await client.discovery(
       new URL("https://accounts.google.com"),
       process.env.GOOGLE_OAUTH_CLIENT_ID!
